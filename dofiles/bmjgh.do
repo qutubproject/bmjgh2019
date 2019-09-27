@@ -9,15 +9,23 @@
 
 // SETTING UP
 set more off
-cd "~/bmjgh2019/"
+	
+	* directory
+	cd "~/bmjgh2019/"
+	
+	* global path
+	global ado "ado/"
 
+// LOADING .ado files in "~/bmjgh2019/ado/"
+	
+	local adoFiles : dir `"${ado}"' files "*.ado"
+	local adoFiles = subinstr(`" `adoFiles' "', `"""' , "" , .)
+	foreach adoFile in `adoFiles' {
+		qui do "${ado}`adoFile'"
+		}
 
-// Run .ado files in "~/bmjgh2019/ado/"
-	* betterbar
-	* betterbarci
-	* chartable
-	* iemargins
-
+	net from http://www.stata.com/users/vwiggins
+		net install grc1leg
 	
 // FIGURE 1: Weighting
 // What is average provider quality versus what is the quality an average patient receives?

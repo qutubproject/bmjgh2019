@@ -1,0 +1,129 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Utilizing the standardized patient method to measure health care quality in LMICs}
+\author{Kwan, Daniels, Bergkvist, Das V, Pai M, Das J}
+\date{13 SEPTEMBER 2019}
+
+\begin{titlepage}
+\maketitle
+
+<<Set Up, include=FALSE>>=
+# ===========================================================================
+# Contents
+# 	0	setup
+# 		.1 directory
+# 		.2 globals
+# 	1	obtaining general measures of quality
+# 	2	understanding facility chars
+# 	3	understanding provider actions
+# 	4	understanding sensitivity of provider decisions to patient chars
+# 	5	assessing and evaluating
+# ===========================================================================
+# notes
+# shortcuts: ctrl+option+k shortcut menu; ctrl+shift+c # mutiple lines
+# https://cran.r-project.org/web/packages/ggalt/vignettes/ggalt_examples.html 
+# http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+# https://rkabacoff.github.io/datavis/Time.html dumbbell correlogram
+# ===========================================================================
+
+# Clean work environment
+rm(list=ls())
+
+# Getting everything together
+pkgs <- c("data.table","dplyr","gdata","ggalt","ggcorrplot","ggplot2","gridExtra","haven","lfe","lmtest","knitr","magrittr","psych","readr","readstata13","reshape","scales","tidyr","viridis","xlsx")
+lapply(pkgs,require,character.only=TRUE)
+# Check packages
+(.packages())
+
+# Setting directory ** ! CHANGE WORKING DIRECTORY **
+setwd("/bmjgh/replication/")
+@
+
+
+\begin{enumerate}
+\item
+<<Number 0>>=
+  
+# Reading data from csv
+knowdo <- read.csv("data/knowdo_means.csv")
+
+@
+
+<<FIGURE 4. To what extent does provider knowledge differ from actual practice?>>=
+
+# china and india for tb sp1, setting up data shape
+head(knowdo)
+  knowdo <- melt(knowdo, id=(c("country", "type")))
+    colnames(knowdo) <- c("Country", "Method", "Outcome", "Proportion")
+    
+    knowdo$Outcome <- recode(knowdo$Outcome,
+                              "mean_correct" = "Managed the case correctly",
+                              "mean_e7" = "Chest radiograph",
+                              "mean_e9" = "Sputum testing",
+                              "mean_e7_and_e9" = "Chest radiograph and sputum testing",
+                              "mean_e7_or_e9" = "Chest radiograph or sputum testing",
+                              "mean_r" = "Referral",
+                              "mean_diagnosis" = "Mentioned TB",
+                              "mean_antibiotics" = "Gave antibiotics")
+  # split data with labels
+  knowdo_ch <- knowdo %>% filter(Country == "China")
+  knowdo_in <- knowdo %>% filter(Country == "India")
+  
+  # china
+  plot_ch <- ggplot(knowdo_ch, aes(Proportion, Outcome)) +
+      geom_line(aes(group = Outcome), alpha = .3) +
+      geom_point(aes(color = Method), size = 1.5, alpha = .3) +
+      geom_line(data = knowdo_ch, aes(group = Outcome)) +
+      geom_point(data = knowdo_ch, aes(color = Method), size = 2) +
+      geom_text(data = knowdo_ch, aes(color = Method, label = round(Proportion, 2)),
+                size = 3, vjust = 2) +
+      scale_x_continuous(name="Proportion of Providers",
+                         limits = c(-.05, 1.05)) +
+      scale_y_discrete(name="Provider Actions",
+                       limits=c("Gave antibiotics",
+                       "Referral",
+                       "Chest radiograph or sputum testing",
+                       "Chest radiograph and sputum testing",
+                       "Sputum testing",
+                       "Chest radiograph",
+                       "Mentioned TB",
+                       "Managed the case correctly")) +
+      ggtitle("China (data from Sylvia et al. 2017)")
+     
+  # india
+  plot_in <- ggplot(knowdo_in, aes(Proportion, Outcome)) +
+      geom_line(aes(group = Outcome), alpha = .3) +
+      geom_point(aes(color = Method), size = 1.5, alpha = .3) +
+      geom_line(data = knowdo_in, aes(group = Outcome)) +
+      geom_point(data = knowdo_in, aes(color = Method), size = 2) +
+      geom_text(data = knowdo_in, aes(color = Method, label = round(Proportion, 2)),
+                size = 3, vjust = 2) +
+      scale_x_continuous(name="Proportion of Providers",
+                         limits = c(-.05, 1.05)) +
+      scale_y_discrete(name="Provider Actions",
+                       limits=c("Gave antibiotics",
+                       "Referral",
+                       "Chest radiograph or sputum testing",
+                       "Chest radiograph and sputum testing",
+                       "Sputum testing",
+                       "Chest radiograph",
+                       "Mentioned TB",
+                       "Managed the case correctly")) +
+      ggtitle("India (data from Das et al. 2015)")
+     
+  grid.arrange(plot_ch, plot_in, ncol=1)
+  ggsave("outputs/FigureX_knowdo.png")
+  
+  rm(knowdo_ch, knowdo_in)
+
+
+@
+
+
+\end{enumerate}
+\end{titlepage}
+\end{document}
